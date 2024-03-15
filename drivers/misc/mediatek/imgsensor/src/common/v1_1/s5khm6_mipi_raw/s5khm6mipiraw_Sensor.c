@@ -2204,7 +2204,7 @@ static kal_uint32 set_max_framerate_by_scenario(
 	case MSDK_SCENARIO_ID_HIGH_SPEED_VIDEO:
 		LOG_DBG("MSDK_SCENARIO_ID_HIGH_SPEED_VIDEO scenario_id= %d\n", scenario_id);
 
-		if(framerate == imgsensor_info.hs_video.max_framerate)	
+		if (framerate == imgsensor_info.hs_video.max_framerate)
 			frame_length = imgsensor_info.hs_video.framelength;
 		else
 			frame_length = imgsensor_info.hs_video.pclk / framerate * 10 / imgsensor_info.hs_video.linelength;
@@ -2441,43 +2441,22 @@ static kal_uint32 get_default_framerate_by_scenario(
 static kal_uint32 set_test_pattern_mode(kal_bool enable)
 {
 #if 0
-	if (enable) {
-		write_cmos_sensor(0x3202, 0x0080);
-		write_cmos_sensor(0x3204, 0x0080);
-		write_cmos_sensor(0x3206, 0x0080);
-		write_cmos_sensor(0x3208, 0x0080);
-		write_cmos_sensor(0x3232, 0x0000);
-		write_cmos_sensor(0x3234, 0x0000);
-		write_cmos_sensor(0x32a0, 0x0100);
-		write_cmos_sensor(0x3300, 0x0001);
-		write_cmos_sensor(0x3400, 0x0001);
-		write_cmos_sensor(0x3402, 0x4e00);
-		write_cmos_sensor(0x3268, 0x0000);
+	if (enable)
 		write_cmos_sensor(0x0600, 0x0002);
-	} else {
-		write_cmos_sensor(0x3202, 0x0000);
-		write_cmos_sensor(0x3204, 0x0000);
-		write_cmos_sensor(0x3206, 0x0000);
-		write_cmos_sensor(0x3208, 0x0000);
-		write_cmos_sensor(0x3232, 0x0000);
-		write_cmos_sensor(0x3234, 0x0000);
-		write_cmos_sensor(0x32a0, 0x0000);
-		write_cmos_sensor(0x3300, 0x0000);
-		write_cmos_sensor(0x3400, 0x0000);
-		write_cmos_sensor(0x3402, 0x0000);
-		write_cmos_sensor(0x3268, 0x0000);
+	else
 		write_cmos_sensor(0x0600, 0x0000);
-	}
+
 	spin_lock(&imgsensor_drv_lock);
 	imgsensor.test_pattern = enable;
 	spin_unlock(&imgsensor_drv_lock);
+	LOG_INF("test_pattern: %d", imgsensor.test_pattern);
 #else
 	//test pattern is always disable
 	spin_lock(&imgsensor_drv_lock);
 	imgsensor.test_pattern = false;
 	spin_unlock(&imgsensor_drv_lock);
+	LOG_INF("test pattern not supported");
 #endif
-	LOG_INF("enable: %d\n", imgsensor.test_pattern);
 	return ERROR_NONE;
 }
 

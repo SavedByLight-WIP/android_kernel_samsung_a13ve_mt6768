@@ -50,41 +50,15 @@
 		fuelgauge,capacity = <4000>;
 #if 0
 		fuelgauge,bat_id_gpio = <
+				SEC_GPIO_REF(${bat_id_single_gpio}) 0  /* BAT_ID_1 */
+				>;
+#elif 0
+		fuelgauge,bat_id_gpio = <
 				SEC_GPIO_REF(${bat_id_gpio_02}) 0  /* BAT_ID_2 */
 				SEC_GPIO_REF(${bat_id_gpio_01}) 0  /* BAT_ID_1 */
 				>;
 #endif
 
-		battery_params {
-			battery,id = <0>;
-			battery0,battery_type = <4400 0x1D44>; /* batt_v_max, cap */
-			battery0,battery_table0 = <
-				0x1400 0x1B33 0x1BAF 0x1CDD 0x1D5D 0x1D82 0x1D8A 0x1D9D
-				0x1DDF 0x1E2C 0x1E50 0x1E7D 0x1EDE 0x1F30 0x1F74 0x1FC0
-				0x1FE0 0x1FF4 0x201E 0x20B8 0x20D7 0x210B 0x2260 0x2400
-				>;
-			battery0,battery_table1 = <
-				0x0000 0x0098 0x00F5 0x034C 0x04E6 0x0799 0x0A4C 0x0D00
-				0x124C 0x1D19 0x2519 0x2D33 0x354C 0x3A99 0x3D4C 0x42B3
-				0x4566 0x4819 0x4AB3 0x5019 0x52CC 0x5580 0x6400 0x6419
-				>;
-			battery0,battery_table2 = <
-				0x4B 0x44 0x40 0x3E 0x3C 0x3B 0x38 0x37
-				0x35 0x34 0x34 0x33 0x33 0x33 0x33 0x32
-				>;
-			/*spare factor chg_factor dischg_factor manvalue*/
-			battery0,rs_value = <0x00 0x266 0x599 0x599 0x29>;
-			battery0,v_alarm = <3100 0>;
-			battery0,topoff = <400>;
-			battery0,i_cal = <1 0 0 0 1 0 0 0 >;
-			battery0,v_cal = <1 0 0 1 0 0 0>;
-			battery0,temp_std = <25>;
-			battery0,tem_poff = <3400 50 3250 50>;
-			battery0,aux_ctrl = <0x303>;
-			battery0,data_ver = <4>;
-			battery0,v_max_table = <0x2260 0x2220 0x21FD 0x21DB 0x2185>;
-			battery0,q_max_table = <0x1D44 0x1CC4 0x1C44 0x1BC4 0x1A85>;
-		};
 	};
 };
 
@@ -95,7 +69,7 @@
 	};
 };
 
-/* /home/dpi/qb5_8816/workspace/P4_1716/android/kernel/kmodule/battery/suwon/fuelgauge/sm5714/sm5714_fuelgauge.a13ve.dtsi */
+/* /home/dpi/qb5_8814/workspace/P4_1716/android/kernel/kmodule/battery/suwon/fuelgauge/sm5714/sm5714_fuelgauge.a13ve.dtsi */
 /*
  * A13ve battery device tree common
  *
@@ -561,12 +535,31 @@
 	};
 };
 
+/* #include "../abc_spec_manager_type1.dtsi" */      /* From abc_spec_manager_type1.py */
+&smd {
+	sec_abc {
+		compatible = "samsung,sec_abc";
+		status = "okay";
+		abc_spec_type1 {
+			module_list = "gpu", "gpu_qc", "gpu_qc", "camera", "camera", "vib", "tsp", "tsp_sub", "mm", "camera", "camera", "camera", "camera";
+			name_list = "gpu_fault", "gpu_fault", "gpu_page_fault", "mipi_overflow", "i2c_fail", "int_gnd_short", "tsp_int_fault", "tsp_int_fault", "venus_hung", "mipi_error_rw1", "mipi_error_rs1", "mipi_error_rt1", "mipi_error_fw1";
+#ifndef CONFIG_SEC_FACTORY
+			threshold_cnt = <20>, <2>, <20>, <1>, <1>, <25>, <10>, <10>, <10>, <1>, <1>, <1>, <1>;
+			threshold_time = <1200>, <1200>, <1200>, <0>, <0>, <5>, <5>, <5>, <3>, <0>, <0>, <0>, <0>;
+#else
+			threshold_cnt = <20>, <2>, <20>, <4>, <4>, <25>, <10>, <10>, <10>, <4>, <4>, <4>, <4>;
+			threshold_time = <1200>, <1200>, <1200>, <120>, <120>, <5>, <5>, <5>, <3>, <120>, <120>, <120>, <120>;
+#endif
+		};
+	};
+};
+
 /* #include "../ap_mtk_mt6769t_T.dtsi" */            /* From ap_mtk_mt6769t_T.py */
 #include <dt-bindings/clock/mt6768-clk.h>
 
 #define topckgen_clk topckgen
 #define infracfg_ao_clk infracfg_ao
-/* /home/dpi/qb5_8816/workspace/P4_1716/android/kernel/kmodule/ap/mtk/mt6769t/ap_mtk_mt6769t_T.a13ve_eur.00.dtsi */
+/* /home/dpi/qb5_8814/workspace/P4_1716/android/kernel/kmodule/ap/mtk/mt6769t/ap_mtk_mt6769t_T.a13ve_eur.00.dtsi */
 #include "../../mediatek/k69v1_64_titan_bengal_tiger_k419/Board_00.dts"
 #include "../../mediatek/k69v1_64_titan_bengal_tiger_k419/gpio00.dtsi"
 
@@ -582,7 +575,7 @@
 	};
 };
 
-/* /home/dpi/qb5_8816/workspace/P4_1716/android/kernel/kmodule/sensorhub/mtk/mt6769t_shub/dts/sensorhub_mt6769t_shub.a13ve.dtsi */
+/* /home/dpi/qb5_8814/workspace/P4_1716/android/kernel/kmodule/sensorhub/mtk/mt6769t_shub/dts/sensorhub_mt6769t_shub.a13ve.dtsi */
 / {
 	fragment@model {
 		target-path = "/";
@@ -602,6 +595,19 @@
 		};
 	};
 };
+/* #include "../abc_common.dtsi" */                  /* From abc_common.py */
+&smd {
+	abc_hub {
+		compatible = "samsung,abc_hub";
+		status = "okay";
+		bootc {
+			bootc,time_spec_user = <100000>; /* user binary user build */
+			bootc,time_spec_eng = <150000>; /* user binary eng build */
+			bootc,time_spec_fac = <100000>; /* factory binary */
+		};
+	};
+};
+
 /* #include "../pmic_MT6358.dtsi" */                 /* From pmic_MT6358.py */
 #if 0 && 0
 &mt_pmic_vdram2_ldo_reg {
@@ -1016,6 +1022,8 @@
 		battery,mix_high_chg_temp = <500>;
 		battery,mix_high_temp_recovery = <390>;
 
+		/* battery,usb_conn_slope_avg = <9>; */
+
 		/* battery,enable_mix_v2; */
 		/* if you want to use mix_v2 concept, add "battery,enable_mix_v2;" */
 		battery,mix_v2_lrp_recov = <460>;
@@ -1041,7 +1049,6 @@
 		battery,pre_wc_afc_work_delay = <4000>;
 		battery,pre_afc_input_current = <500>;
 		battery,pre_wc_afc_input_current = <500>;
-		battery,prepare_ta_delay = <0>; /* msec */
 
 		battery,swelling_high_rechg_voltage = <4000>;
 		battery,swelling_low_rechg_voltage = <4000>;
@@ -1079,12 +1086,26 @@
 		battery,wireless_cc_cv = <85>;
 		battery,wireless_otg_input_current = <900>;
 
+		/* Calculate Based on Offsets from float voltage, full_condition_vcell and recharge_condition_vcell */
+		/* if you want to use age_data_by_offset concept add battery,age_data_by_offset; */
+
+		battery,age_data_cycle = <0 300 400 700 1000>;
+		battery,age_data_full_condition_soc = <93 92 91 90 89>;
+		battery,age_data_chg_float_voltage_offset = <0 20 40 60 110>;
+		battery,age_data_full_condition_vcell_offset = <0 20 40 60 110>;
+		battery,age_data_recharge_condition_vcell_offset = <0 20 40 60 110>;
+		/* battery,age_data_max_charging_current_offset = <0 100 200 300 400>; */
+
 		/* cycle, chg_float_voltage, recharge_condition_vcell, full_condition_vcell, full_condition_soc, step charging condition */
 		battery,age_data = <0 4350 4280 4250 93
 			300 4330 4260 4230 92
 			400 4310 4240 4210 91
 			700 4290 4220 4190 90
 			1000 4240 4170 4140 89>;
+
+
+		battery,health_condition_cycle = <900 1200 1500>;
+		battery,health_condition_asoc = <0 0 0>; /* Default ASOC Disabled */
 
 		battery,max_input_voltage = <9000>; /* mV */
 		battery,max_input_current = <3000>;  /* mA */
@@ -1222,7 +1243,8 @@
 	 *  38	CABLE_PDIC_APDO,
 	 *  39  CABLE_POGO,
 	 *  40  CABLE_POGO_9V,
-	 *  41	CABLE_MAX,
+	 *  41  FPDO_DC,
+	 *  42	CABLE_MAX,
 	 */
 	sec_battery_cable: cable-info {
 		default_input_current = <1800>;
@@ -1327,11 +1349,11 @@
 		};
 	};
 	sec_battery_wireless_power_info: wireless-power-info {
-		count = <5>;
+		count = <9>;
 		current_group_0 {
 			wireless_power_class = <2>;
 			vout = <9000>;
-			input_current_limit = <825>;
+			input_current_limit = <830>;
 			fast_charging_current = <3150>;
 			ttf_charge_current = <1500>;
 			rx_power = <7500>;
@@ -1346,24 +1368,56 @@
 		};
 		current_group_2 {
 			wireless_power_class = <2>;
+			vout = <11000>;
+			input_current_limit = <680>;
+			fast_charging_current = <3150>;
+			ttf_charge_current = <1500>;
+			rx_power = <7500>;
+		};
+		current_group_3 {
+			wireless_power_class = <2>;
+			vout = <12000>;
+			input_current_limit = <625>;
+			fast_charging_current = <3150>;
+			ttf_charge_current = <1500>;
+			rx_power = <7500>;
+		};
+		current_group_4 {
+			wireless_power_class = <2>;
 			vout = <9000>;
-			input_current_limit = <1200>;
+			input_current_limit = <1330>;
 			fast_charging_current = <3150>;
 			ttf_charge_current = <2175>;
 			rx_power = <12000>;
 		};
-		current_group_3 {
+		current_group_5 {
 			wireless_power_class = <2>;
 			vout = <11000>;
-			input_current_limit = <1100>;
+			input_current_limit = <1090>;
 			fast_charging_current = <3150>;
 			ttf_charge_current = <2100>;
 			rx_power = <12000>;
 		};
-		current_group_4 {
+		current_group_6 {
+			wireless_power_class = <2>;
+			vout = <12000>;
+			input_current_limit = <1000>;
+			fast_charging_current = <3150>;
+			ttf_charge_current = <2100>;
+			rx_power = <12000>;
+		};
+		current_group_7 {
 			wireless_power_class = <2>;
 			vout = <11000>;
-			input_current_limit = <1300>;
+			input_current_limit = <1360>;
+			fast_charging_current = <3150>;
+			ttf_charge_current = <2300>;
+			rx_power = <15000>;
+		};
+		current_group_8 {
+			wireless_power_class = <2>;
+			vout = <12000>;
+			input_current_limit = <1250>;
 			fast_charging_current = <3150>;
 			ttf_charge_current = <2300>;
 			rx_power = <15000>;
@@ -1371,7 +1425,7 @@
 	};
 };
 
-/* /home/dpi/qb5_8816/workspace/P4_1716/android/kernel/kmodule/battery/suwon/common/dts/a13ve/battery_common.dtsi */
+/* /home/dpi/qb5_8814/workspace/P4_1716/android/kernel/kmodule/battery/suwon/common/dts/a13ve/battery_common.dtsi */
 #include <dt-bindings/battery/sec-battery.h>
 
 #define MAX_FV 4350
@@ -1383,6 +1437,7 @@
 		battery,batt_data_version = <1>;
 		battery,chip_vendor = "MTK";
 
+		battery,adc_read_type = <SEC_BATTERY_ADC_RAW>;
 		battery,temp_check_type = <SEC_BATTERY_TEMP_CHECK_TEMP>;
 		battery,chg_temp_check_type = <SEC_BATTERY_TEMP_CHECK_TEMP>;
 
@@ -1451,13 +1506,6 @@
 			400 4310 4240 4260 91
 			700 4290 4220 4240 90
 			1000 4240 4170 4190 89>;
-
-		battery,health_condition = <
-			/* CYCLE ASOC */
-			900 0  /* GOOD */
-			1200 0 /* NORMAL */
-			1500 0 /* AGED */
-			>;
 
 		battery,siop_scenarios = <20 0>;
 		battery,siop_curr_type_num = <3>;
@@ -1663,7 +1711,7 @@
 	};
 };
 
-/* /home/dpi/qb5_8816/workspace/P4_1716/android/kernel/kmodule/sec_pm/sec_thermistor/dts/sec_thermistor_mtk.a13ve.dtsi */
+/* /home/dpi/qb5_8814/workspace/P4_1716/android/kernel/kmodule/sec_pm/sec_thermistor/dts/sec_thermistor_mtk.a13ve.dtsi */
 &sec_ap_thermistor {
 	adc_array = <76 91 111 136 163 192 234 288 345
 				416 497 596 744 889 1074 1306 1529 1769 2107
@@ -1769,7 +1817,7 @@
 };
 
 
-/* /home/dpi/qb5_8816/workspace/P4_1716/android/kernel/kmodule/mfd/sm/sm5714/sm5714_mtk.a13ve.dtsi */
+/* /home/dpi/qb5_8814/workspace/P4_1716/android/kernel/kmodule/mfd/sm/sm5714/sm5714_mtk.a13ve.dtsi */
 &pio {
 	if_pmic_scl: if_pmic_scl {
 		pins_cmd_dat {
@@ -2108,7 +2156,7 @@
 		novatek,enable_sysinput_enabled;
 	};
 };
-/* /home/dpi/qb5_8816/workspace/P4_1716/android/kernel/kmodule/input/touchscreen/novatek/nt36523_spi/dts/input-mtk-tsp-nt36523-spi.a13ve.dtsi */
+/* /home/dpi/qb5_8814/workspace/P4_1716/android/kernel/kmodule/input/touchscreen/novatek/nt36523_spi/dts/input-mtk-tsp-nt36523-spi.a13ve.dtsi */
 &nt36523_tsp_on_cs {
 	pins_cmd_dat{
 		pinmux = <MTK_PINMUX(SEC_GPIO_NUM(AP,pio,18), 2)>;
@@ -2365,7 +2413,7 @@
 	};
 };
 
-/* /home/dpi/qb5_8816/workspace/P4_1716/android/kernel/kmodule/input/touchscreen/himax/hx83xxx_spi/dts/input-mtk-tsp-hx83xxx_spi.a13ve.dtsi */
+/* /home/dpi/qb5_8814/workspace/P4_1716/android/kernel/kmodule/input/touchscreen/himax/hx83xxx_spi/dts/input-mtk-tsp-hx83xxx_spi.a13ve.dtsi */
 &himax_tsp_on_cs {
 	pins_cmd_dat{
 		pinmux = <MTK_PINMUX(SEC_GPIO_NUM(AP,pio,18), 2)>;
@@ -2486,7 +2534,7 @@
 	#address-cells = <1>;
 	#size-cells = <0>;
 	status = "okay";
-	s2mpb03_pmic@56 {
+	s2mpb03_pmic_0: s2mpb03_pmic@56 {
 		compatible = "samsung,s2mpb03pmic";
 		reg = <0x56>;
 		s2mpb03,wakeup;
@@ -2786,7 +2834,7 @@
 
 #endif/* isg6320_wifi */
 
-/* /home/dpi/qb5_8816/workspace/P4_1716/android/kernel/kmodule/sensors/isg6320/dts/isg6320.a13ve.dtsi */
+/* /home/dpi/qb5_8814/workspace/P4_1716/android/kernel/kmodule/sensors/isg6320/dts/isg6320.a13ve.dtsi */
 &isg6320 {
 	isg6320,reg_num = <116>;
 	isg6320,set_reg = /bits/ 8 <

@@ -719,10 +719,8 @@ static kal_uint32 get_imgsensor_id(UINT32 *sensor_id)
 		spin_unlock(&imgsensor_drv_lock);
 		do {
 			*sensor_id = return_sensor_id();
+			LOG_INF("i2c write id : 0x%x, sensor id: 0x%x\n",	imgsensor.i2c_write_id, *sensor_id);
 			if (*sensor_id == imgsensor_info.sensor_id) {
-				LOG_INF(
-					"i2c write id : 0x%x, sensor id: 0x%x\n",
-					imgsensor.i2c_write_id, *sensor_id);
 				return ERROR_NONE;
 			}
 
@@ -732,7 +730,9 @@ static kal_uint32 get_imgsensor_id(UINT32 *sensor_id)
 		retry = 2;
 	}
 	if (*sensor_id != imgsensor_info.sensor_id) {
-		LOG_INF("Read id fail,sensor id: 0x%x\n", *sensor_id);
+		LOG_ERR("Read sensor id fail, write id: 0x%x, id: 0x%x\n", imgsensor.i2c_write_id, *sensor_id);
+
+		/*if Sensor ID is not correct, Must set *sensor_id to 0xFFFFFFFF*/
 		*sensor_id = 0xFFFFFFFF;
 		return ERROR_SENSOR_CONNECT_FAIL;
 	}
@@ -770,9 +770,8 @@ static kal_uint32 open(void)
 		spin_unlock(&imgsensor_drv_lock);
 		do {
 			sensor_id = return_sensor_id();
+			LOG_INF("i2c write id: 0x%x, sensor id: 0x%x\n", imgsensor.i2c_write_id, sensor_id);
 			if (sensor_id == imgsensor_info.sensor_id) {
-				LOG_INF("i2c write id: 0x%x, sensor id: 0x%x\n",
-					imgsensor.i2c_write_id, sensor_id);
 				break;
 			}
 
@@ -784,7 +783,7 @@ static kal_uint32 open(void)
 		retry = 2;
 	}
 	if (imgsensor_info.sensor_id != sensor_id) {
-		LOG_INF("%s sensor id fail: 0x%x\n", __func__, sensor_id);
+		LOG_ERR("Read sensor id fail, write id: 0x%x, id: 0x%x\n", imgsensor.i2c_write_id, sensor_id);
 		return ERROR_SENSOR_CONNECT_FAIL;
 	}
 	/* initail sequence write in  */
@@ -1030,22 +1029,29 @@ static kal_uint32 get_default_framerate_by_scenario(enum MSDK_SCENARIO_ID_ENUM s
 
 static kal_uint32 set_test_pattern_mode(kal_bool enable)
 {
-	LOG_INF("%s enable: %d", __func__, enable);
-
+#if 0
 	if (enable) {
-// 0x5E00[8]: 1 enable,  0 disable
-// 0x5E00[1:0]; 00 Color bar, 01 Random Data, 10 Square, 11 BLACK
+// 0x0A05[0]: 1 enable,  0 disable
+// 0x020A[3:0]; 0 No Pattern, 1 Solid Color, 2 100% Color Bar
 		write_cmos_sensor(0x0a04, 0x0143);
-		write_cmos_sensor(0x0200, 0x0002);
+		write_cmos_sensor_8(0x020A, 0x0002);
 	} else {
-// 0x5E00[8]: 1 enable,  0 disable
-// 0x5E00[1:0]; 00 Color bar, 01 Random Data, 10 Square, 11 BLACK
+// 0x0A05[0]: 1 enable,  0 disable
 		write_cmos_sensor(0x0a04, 0x0142);
-		write_cmos_sensor(0x0200, 0x0000);
+		write_cmos_sensor_8(0x020A, 0x0000);
 	}
 	spin_lock(&imgsensor_drv_lock);
 	imgsensor.test_pattern = enable;
 	spin_unlock(&imgsensor_drv_lock);
+
+	LOG_INF("test_pattern: %d", imgsensor.test_pattern);
+#else
+	//test pattern is always disable
+	spin_lock(&imgsensor_drv_lock);
+	imgsensor.test_pattern = false;
+	spin_unlock(&imgsensor_drv_lock);
+	LOG_INF("test pattern not supported");
+#endif
 	return ERROR_NONE;
 }
 

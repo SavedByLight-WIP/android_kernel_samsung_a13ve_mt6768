@@ -155,14 +155,16 @@ int cam_ois_mcu_power_up(struct mcu_info *mcu_info)
 {
 	int ret = 0;
 
-	LOG_INF(" - E mcu power %d", mcu_info->power_on);
+	LOG_INF(" - E mcu power %d", mcu_info->power_count);
 
-	if (!mcu_info->power_on) {
+	if (mcu_info->power_count > 0)
+		mcu_info->power_count++;
+	else if (mcu_info->power_count == 0) {
 		LOG_INF("AOIS dummy");
-		mcu_info->power_on = true;
+		mcu_info->power_count++;
 	}
 
-	LOG_INF(" - X mcu power %d", mcu_info->power_on);
+	LOG_INF(" - X mcu power %d", mcu_info->power_count);
 	return ret;
 }
 
@@ -170,14 +172,16 @@ int cam_ois_sysfs_mcu_power_up(struct mcu_info *mcu_info)
 {
 	int ret = 0;
 
-	LOG_INF(" - E mcu power %d", mcu_info->power_on);
+	LOG_INF(" - E mcu power %d", mcu_info->power_count);
 
-	if (!mcu_info->power_on) {
+	if (mcu_info->power_count > 0)
+		mcu_info->power_count++;
+	else if (mcu_info->power_count == 0) {
 		LOG_INF("AOIS dummy");
-		mcu_info->power_on = true;
+		mcu_info->power_count++;
 	}
 
-	LOG_INF(" - X mcu power %d", mcu_info->power_on);
+	LOG_INF(" - X mcu power %d", mcu_info->power_count);
 	return ret;
 }
 
@@ -185,12 +189,18 @@ int cam_ois_mcu_power_down(struct mcu_info *mcu_info)
 {
 	int ret = 0;
 
-	LOG_INF(" - E mcu power %d", mcu_info->power_on);
-	if (mcu_info->power_on) {
+	LOG_INF(" - E mcu power %d", mcu_info->power_count);
+	if (mcu_info->power_count > 1)
+		mcu_info->power_count--;
+	else if (mcu_info->power_count == 1) {
 		LOG_INF("AOIS dummy");
-		mcu_info->power_on = false;
+		mcu_info->power_count--;
 	}
-	LOG_INF(" - X mcu power %d", mcu_info->power_on);
+
+	if (mcu_info->power_count < 0)
+		mcu_info->power_count = 0;
+
+	LOG_INF(" - X mcu power %d", mcu_info->power_count);
 
 	return ret;
 }
@@ -199,12 +209,18 @@ int cam_ois_sysfs_mcu_power_down(struct mcu_info *mcu_info)
 {
 	int ret = 0;
 
-	LOG_INF(" - E mcu power %d", mcu_info->power_on);
-	if (mcu_info->power_on) {
+	LOG_INF(" - E mcu power %d", mcu_info->power_count);
+	if (mcu_info->power_count > 1)
+		mcu_info->power_count--;
+	else if (mcu_info->power_count == 1) {
 		LOG_INF("AOIS dummy");
-		mcu_info->power_on = false;
+		mcu_info->power_count--;
 	}
-	LOG_INF(" - X mcu power %d", mcu_info->power_on);
+
+	if (mcu_info->power_count < 0)
+		mcu_info->power_count = 0;
+
+	LOG_INF(" - X mcu power %d", mcu_info->power_count);
 
 	return ret;
 }

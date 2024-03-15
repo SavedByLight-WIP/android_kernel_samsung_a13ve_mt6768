@@ -46,7 +46,7 @@ int cam_ois_prove_init(void)
 
 	ois_info.af_pos_wide = 0;
 	mcu_info.is_fw_updated = 0;
-	mcu_info.power_on = false;
+	mcu_info.power_count = 0;
 
 	cam_ois_set_i2c_client();
 	mcu_info.pdev = get_cam_ois_dev();
@@ -906,7 +906,7 @@ int cam_ois_sysfs_set_mode(int mode)
 
 	LOG_INF("E");
 
-	if (!mcu_info.power_on) {
+	if (mcu_info.power_count == 0) {
 		LOG_ERR("MCU power condition: off");
 		return -1;
 	}
@@ -963,7 +963,7 @@ int cam_ois_sysfs_get_mcu_error(int *w_error)
 	LOG_INF("E");
 
 	*w_error = 1;
-	if (!mcu_info.power_on) {
+	if (mcu_info.power_count == 0) {
 		LOG_ERR("MCU power condition: off");
 		return -1;
 	}
@@ -1034,9 +1034,6 @@ int cam_ois_gyro_sensor_noise_check(long *stdev_data_x, long *stdev_data_y)
 		return 0;
 	}
 
-#if ENABLE_AOIS == 1
-	cam_ois_set_aois_fac_mode(FACTORY_ONETIME, 10);
-#endif
 	/* Check Noise Measure End */
 	do {
 		ret = cam_ois_i2c_read_multi(i2c_client, MCU_I2C_SLAVE_W_ADDR, 0x0029, rcv_data_array, 1);
@@ -1149,10 +1146,6 @@ void cam_ois_get_hall_position(unsigned int *targetPosition, unsigned int *hallP
 			LOG_ERR("fail to set servo_on bit: %d", ret);
 	}
 
-#if ENABLE_AOIS == 1
-	cam_ois_set_aois_fac_mode(FACTORY_1MS, 1);
-#endif
-
 	msleep(200);
 
 	LOG_INF("4: GET OIS HALL POSITION");
@@ -1213,3 +1206,4 @@ void cam_ois_get_hall_position(unsigned int *targetPosition, unsigned int *hallP
 #endif
 	LOG_INF(" - X");
 }
+

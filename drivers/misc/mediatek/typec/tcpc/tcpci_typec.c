@@ -538,6 +538,7 @@ static void typec_wd_work(struct work_struct *work)
 			return;
 		}
 	}
+
 	if (tcpci_is_water_detected(tcpc) > 0) {
 		tcpci_lock_typec(tcpc);
  		tcpc_typec_handle_wd(tcpc, true);
@@ -551,8 +552,7 @@ static void typec_wd_work(struct work_struct *work)
 	}
 	mutex_unlock(&tcpc->wd_lock);
 }
-static int typec_check_water_status(struct tcpc_device *tcpc,
-						unsigned int mdelay)
+static int typec_check_water_status(struct tcpc_device *tcpc)
 {
 	if (!(tcpc->tcpc_flags & TCPC_FLAGS_WATER_DETECTION))
 		return 0;
@@ -560,10 +560,9 @@ static int typec_check_water_status(struct tcpc_device *tcpc,
 	if (tcpc->typec_state == typec_water_protection)
 		return 0;
 
-	TCPC_INFO("%s mdelay[%u]\n", __func__, mdelay);
+	TCPC_INFO("%s\n", __func__);
 
-	schedule_delayed_work(&tcpc->wd_status_work,
-					msecs_to_jiffies(mdelay));
+	schedule_delayed_work(&tcpc->wd_status_work, 0);
 
 	return 0;
 }
@@ -622,7 +621,8 @@ static bool typec_check_cc_bounce(struct tcpc_device *tcpc)
 			tcpc->cc_bounce_detected = true;
 			TCPC_INFO("%s cc bounce detected\n", __func__);
 #ifdef CONFIG_WD_TRY_CC_BOUNCE
-			typec_check_water_status(tcpc, 500);
+			tcpc->retry_wd = 1;
+			typec_check_water_status(tcpc);
 #endif /* CONFIG_WD_TRY_CC_BOUNCE */
 		}
 	}
@@ -676,12 +676,12 @@ static inline int typec_norp_src_attached_entry(struct tcpc_device *tcpc)
 #ifdef CONFIG_WD_POLLING_ONLY
 	if (!tcpc->typec_power_ctrl) {
 		if (tcpc->bootmode == 8 || tcpc->bootmode == 9)
-			typec_check_water_status(tcpc, 0);
+			typec_check_water_status(tcpc);
 
 		tcpci_set_usbid_polling(tcpc, false);
 	}
 #else
-	if (!tcpc->typec_power_ctrl && typec_check_water_status(tcpc, 0))
+	if (!tcpc->typec_power_ctrl && typec_check_water_status(tcpc))
 		return 0;
 #endif /* CONFIG_WD_POLLING_ONLY */
 #endif /* CONFIG_WATER_DETECTION */
@@ -2472,14 +2472,14 @@ int tcpc_typec_handle_cc_change(struct tcpc_device *tcpc)
 		    typec_state_old == typec_unattached_src) {
 #ifdef CONFIG_WD_POLLING_ONLY
 			if (tcpc->bootmode == 8 || tcpc->bootmode == 9)
-				typec_check_water_status(tcpc, 0);
+				typec_check_water_status(tcpc);
 #ifdef CONFIG_WD_INIT_POWER_OFF_CHARGE
 			else if (tcpc->init_pwroff_check) {
 				tcpc->init_pwroff_check = false;
 #if IS_ENABLED(CONFIG_SEC_HICCUP)
 				tcpc->init_pwroff_hiccup = true;
 #endif
-				typec_check_water_status(tcpc, 0);
+				typec_check_water_status(tcpc);
 			}
 #endif /* CONFIG_WD_INIT_POWER_OFF_CHARGE */
 #else

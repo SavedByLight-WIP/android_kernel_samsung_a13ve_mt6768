@@ -118,8 +118,8 @@ static struct imgsensor_info_struct imgsensor_info = {
 	},
 	.hs_video = {
 		.pclk = 598000000,
-		.linelength  = 2800,
-		.framelength = 1770,
+		.linelength  = 3492,
+		.framelength = 1421,
 		.startx = 0,
 		.starty = 0,
 		.grabwindow_width  = 2032,
@@ -887,7 +887,7 @@ static int set_mode_setfile(enum IMGSENSOR_MODE mode)
 	return 0;
 }
 
-/** JN1_EVT0.0_Setfile_20220302_ver0.13 **/
+/** JN1_EVT0.0_Setfile_20220302_ver0.14 **/
 #if INDIRECT_BURST
 static kal_uint16 addr_data_burst_init_jn1[] = {
 	0x6F12,
@@ -2311,39 +2311,23 @@ static kal_uint32 get_default_framerate_by_scenario(
 
 static kal_uint32 set_test_pattern_mode(kal_bool enable)
 {
-	LOG_INF("enable: %d\n", enable);
-
-	if (enable) {
-		write_cmos_sensor(0x3202, 0x0080);
-		write_cmos_sensor(0x3204, 0x0080);
-		write_cmos_sensor(0x3206, 0x0080);
-		write_cmos_sensor(0x3208, 0x0080);
-		write_cmos_sensor(0x3232, 0x0000);
-		write_cmos_sensor(0x3234, 0x0000);
-		write_cmos_sensor(0x32a0, 0x0100);
-		write_cmos_sensor(0x3300, 0x0001);
-		write_cmos_sensor(0x3400, 0x0001);
-		write_cmos_sensor(0x3402, 0x4e00);
-		write_cmos_sensor(0x3268, 0x0000);
+#if 0
+	if (enable)
 		write_cmos_sensor(0x0600, 0x0002);
-	} else {
-		write_cmos_sensor(0x3202, 0x0000);
-		write_cmos_sensor(0x3204, 0x0000);
-		write_cmos_sensor(0x3206, 0x0000);
-		write_cmos_sensor(0x3208, 0x0000);
-		write_cmos_sensor(0x3232, 0x0000);
-		write_cmos_sensor(0x3234, 0x0000);
-		write_cmos_sensor(0x32a0, 0x0000);
-		write_cmos_sensor(0x3300, 0x0000);
-		write_cmos_sensor(0x3400, 0x0000);
-		write_cmos_sensor(0x3402, 0x0000);
-		write_cmos_sensor(0x3268, 0x0000);
+	else
 		write_cmos_sensor(0x0600, 0x0000);
-	}
+
 	spin_lock(&imgsensor_drv_lock);
 	imgsensor.test_pattern = enable;
 	spin_unlock(&imgsensor_drv_lock);
-
+	LOG_INF("test_pattern: %d", imgsensor.test_pattern);
+#else
+	//test pattern is always disable
+	spin_lock(&imgsensor_drv_lock);
+	imgsensor.test_pattern = false;
+	spin_unlock(&imgsensor_drv_lock);
+	LOG_INF("test pattern not supported");
+#endif
 	return ERROR_NONE;
 }
 static kal_uint32 get_sensor_temperature(void)
