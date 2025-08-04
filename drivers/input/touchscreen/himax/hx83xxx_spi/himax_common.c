@@ -3268,7 +3268,7 @@ int himax_chip_common_init(void)
 	ts->gesture_cust_en[0] = 0;
 	ts->gesture_cust_en[1] = 0;
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 19, 110))
-	ts->ts_SMWP_wake_lock = wakeup_source_register(ts->dev, HIMAX_common_NAME);
+	ts->ts_SMWP_wake_lock = wakeup_source_register(NULL, HIMAX_common_NAME);
 #else
 	wakeup_source_init(ts->ts_SMWP_wake_lock, HIMAX_common_NAME);
 #endif
