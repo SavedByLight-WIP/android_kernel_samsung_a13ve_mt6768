@@ -27,7 +27,7 @@ jobs:
           set -euo pipefail
           apt-get update
           DEBIAN_FRONTEND=noninteractive apt-get install -y \
-            bc bison flex build-essential \
+            bc bison flex build-essential clang \
             git wget curl ca-certificates \
             libssl-dev libncurses5-dev \
             python3 \
