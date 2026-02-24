@@ -1,0 +1,174 @@
+name: Build Samsung A13VE Kernel (4.19 arm64)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-kernel:
+    runs-on: ubuntu-latest
+
+    # Pin container for compatibility / reproducibility
+    container:
+      image: ubuntu:20.04
+
+    # (Kept from my existing workflow for compatibility with older node in container)
+    env:
+      ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Install build dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          apt-get update
+          DEBIAN_FRONTEND=noninteractive apt-get install -y \
+            bc bison flex build-essential \
+            git wget curl ca-certificates \
+            libssl-dev libncurses5-dev \
+            python3 \
+            rsync unzip xz-utils \
+            libelf-dev \
+            file
+
+      - name: Fetch LineageOS prebuilt clang (kernel, r416183b)
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone --depth=1 \
+            https://github.com/LineageOS/android_prebuilts_clang_kernel_linux-x86_clang-r416183b \
+            /opt/clang-prebuilt
+
+          # Locate clang and tool prefix robustly (repo layout may vary)
+          CLANG_BIN="$(find /opt/clang-prebuilt -type f -path '*/bin/clang' -print -quit)"
+          if [ -z "${CLANG_BIN}" ]; then
+            echo "ERROR: clang not found under /opt/clang-prebuilt"
+            find /opt/clang-prebuilt -maxdepth 4 -type f -name clang -print || true
+            exit 1
+          fi
+
+          TOOLBIN="$(dirname "${CLANG_BIN}")"
+          echo "TOOLBIN=${TOOLBIN}" >> "${GITHUB_ENV}"
+
+          # Prefer aarch64-linux-gnu- if present (per Samsung note style)
+          if [ -x "${TOOLBIN}/aarch64-linux-gnu-gcc" ] || [ -x "${TOOLBIN}/aarch64-linux-gnu-ld" ]; then
+            echo "CROSS_PREFIX=${TOOLBIN}/aarch64-linux-gnu-" >> "${GITHUB_ENV}"
+            echo "CLANG_TRIPLE_PREFIX=${TOOLBIN}/aarch64-linux-gnu-" >> "${GITHUB_ENV}"
+          else
+            # Fallback: use llvm toolchain only; many trees are fine with LLVM=1
+            echo "CROSS_PREFIX=" >> "${GITHUB_ENV}"
+            echo "CLANG_TRIPLE_PREFIX=" >> "${GITHUB_ENV}"
+          fi
+
+          echo "CLANG_BIN=${CLANG_BIN}" >> "${GITHUB_ENV}"
+
+      - name: Sanity check toolchain
+        shell: bash
+        run: |
+          set -euo pipefail
+          "${CLANG_BIN}" --version | head -n 1
+          echo "TOOLBIN=${TOOLBIN}"
+          ls -la "${TOOLBIN}" | head -n 50
+          if [ -n "${CROSS_PREFIX}" ]; then
+            "${CROSS_PREFIX}gcc" -dumpmachine || true
+            "${CROSS_PREFIX}ld" --version | head -n 1 || true
+          fi
+
+      - name: Configure (a13ve_defconfig)
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          mkdir -p out
+
+          export ARCH=arm64
+          export ANDROID_MAJOR_VERSION=r
+
+          # Avoid editing Makefile: pass toolchain via env/args
+          export CC="${CLANG_BIN}"
+          export KCFLAGS="-w"
+
+          # If GNU prefix exists, set it; else rely on LLVM
+          if [ -n "${CROSS_PREFIX}" ]; then
+            export CROSS_COMPILE="${CROSS_PREFIX}"
+            export CLANG_TRIPLE="${CLANG_TRIPLE_PREFIX}"
+            # Keep LLVM helpers enabled; harmless and improves portability
+            export LLVM=1
+            export LLVM_IAS=1
+          else
+            export LLVM=1
+            export LLVM_IAS=1
+          fi
+
+          make -C "$(pwd)" O="$(pwd)/out" \
+            CONFIG_SECTION_MISMATCH_WARN_ONLY=y \
+            a13ve_defconfig
+
+          # Resolve any dependency selections without prompting
+          make -C "$(pwd)" O="$(pwd)/out" olddefconfig
+
+      - name: Build kernel + modules
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          export ARCH=arm64
+          export ANDROID_MAJOR_VERSION=r
+          export CC="${CLANG_BIN}"
+          export KCFLAGS="-w"
+
+          if [ -n "${CROSS_PREFIX}" ]; then
+            export CROSS_COMPILE="${CROSS_PREFIX}"
+            export CLANG_TRIPLE="${CLANG_TRIPLE_PREFIX}"
+            export LLVM=1
+            export LLVM_IAS=1
+          else
+            export LLVM=1
+            export LLVM_IAS=1
+          fi
+
+          make -C "$(pwd)" O="$(pwd)/out" \
+            CONFIG_SECTION_MISMATCH_WARN_ONLY=y \
+            -j"$(nproc)"
+
+      - name: Collect artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts
+
+          # Kernel image
+          if [ -f out/arch/arm64/boot/Image.gz ]; then
+            cp -v out/arch/arm64/boot/Image.gz artifacts/
+          else
+            echo "ERROR: out/arch/arm64/boot/Image.gz not found"
+            find out/arch/arm64/boot -maxdepth 2 -type f -print || true
+            exit 1
+          fi
+
+          # Modules
+          find out -type f -name "*.ko" -print > artifacts/modules.list || true
+          if [ -s artifacts/modules.list ]; then
+            mkdir -p artifacts/modules
+            while IFS= read -r ko; do
+              rel="${ko#out/}"
+              mkdir -p "artifacts/modules/$(dirname "${rel}")"
+              cp -v "${ko}" "artifacts/modules/${rel}"
+            done < artifacts/modules.list
+            (cd artifacts && tar -czf modules.tar.gz modules)
+          else
+            echo "WARNING: No .ko modules found under out/"
+          fi
+
+          # Save resolved config for debugging
+          cp -v out/.config artifacts/kernel.config
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: a13ve-kernel-4.19-arm64
+          path: artifacts
