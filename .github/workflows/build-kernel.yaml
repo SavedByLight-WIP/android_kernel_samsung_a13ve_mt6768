@@ -106,7 +106,7 @@ jobs:
 
           make -C "$(pwd)" O="$(pwd)/out" \
             CONFIG_SECTION_MISMATCH_WARN_ONLY=y \
-            a13ve_defconfig droidspaces.config
+            a13ve_defconfig custom.config droidspaces.config
 
           # Resolve any dependency selections without prompting
           make -C "$(pwd)" O="$(pwd)/out" olddefconfig
