@@ -28,6 +28,13 @@ cp out/arch/arm64/boot/Image $(pwd)/arch/arm64/boot/Image
 #
 # Verified/derived values (from your device's Loaded Modules list and
 # defconfig, not guessed):
+#   - MTK_PLATFORM=mt6768 -> matches CONFIG_MTK_PLATFORM="mt6768" in
+#     a13ve_defconfig. gps/Makefile derives this itself from
+#     $(CONFIG_MTK_PLATFORM), which normally comes from the target
+#     kernel's .config via Kbuild's external-module machinery -- but
+#     these are standalone `make M=...` invocations, not part of the
+#     main kernel's parent-Makefile chain, so it's passed explicitly
+#     here rather than relying on that propagating implicitly.
 #   - BT_PLATFORM=connac1x   -> matches loaded module "bt_drv_connac1x"
 #     (module Makefile names the .ko bt_drv_$(BT_PLATFORM))
 #   - fmradio MODULE_NAME=fmradio_drv_mt6631 -> matches loaded module
@@ -57,7 +64,8 @@ build_ext_module() {
         return
     fi
     make -C $(pwd) O="$KERNEL_OUT" ARCH=arm64 CROSS_COMPILE=$CROSS_COMPILE \
-        M="$moddir" KERNEL_OUT="$KERNEL_OUT" "$@" modules
+        M="$moddir" KERNEL_OUT="$KERNEL_OUT" MTK_PLATFORM=mt6768 \
+        CONFIG_MTK_PLATFORM=mt6768 "$@" modules
     find "$moddir" -maxdepth 1 -name '*.ko' -exec cp -v {} "$EXT_MOD_OUT/" \;
 }
 

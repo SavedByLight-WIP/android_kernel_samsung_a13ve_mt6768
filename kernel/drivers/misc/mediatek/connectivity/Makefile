@@ -76,13 +76,9 @@ endif
         $(warning symbolic link to $(PATH_TO_WLAN_CHR_DRV))
         $(warning symbolic link to $(PATH_TO_WLAN_DRV))
 
-        $(shell unlink $(srctree)/$(src)/wmt_drv)
-        $(shell unlink $(srctree)/$(src)/wmt_chrdev_wifi)
-        $(shell unlink $(srctree)/$(src)/wlan_drv_gen4m)
-
-        $(shell ln -s $(ABS_PATH_TO_WMT_DRV)      $(srctree)/$(src)/wmt_drv)
-        $(shell ln -s $(ABS_PATH_TO_WLAN_CHR_DRV) $(srctree)/$(src)/wmt_chrdev_wifi)
-        $(shell ln -s $(ABS_PATH_TO_WLAN_DRV)     $(srctree)/$(src)/wlan_drv_gen4m)
+        $(shell ln -sfn $(ABS_PATH_TO_WMT_DRV)      $(srctree)/$(src)/wmt_drv)
+        $(shell ln -sfn $(ABS_PATH_TO_WLAN_CHR_DRV) $(srctree)/$(src)/wmt_chrdev_wifi)
+        $(shell ln -sfn $(ABS_PATH_TO_WLAN_DRV)     $(srctree)/$(src)/wlan_drv_gen4m)
 
         # for gen4m options
         export CONFIG_MTK_COMBO_WIFI_HIF=axi
