@@ -15,11 +15,41 @@ jobs:
     env:
       ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
 
+    # Repo layout: this repo's root is now the PARENT folder containing
+    # both the kernel source and the vendor connectivity module source as
+    # siblings:
+    #   <repo root>/android_kernel_samsung_a13ve_mt6768-master/   (kernel)
+    #   <repo root>/vendor/mediatek/kernel_modules/                (connectivity, udc)
+    # This matches drivers/misc/mediatek/connectivity/Makefile, which
+    # locates the vendor source via $(srctree)/.. -- so every `make`
+    # invocation below needs to run from inside the kernel subfolder, not
+    # the repo root. `defaults.run.working-directory` does that for every
+    # `run:` step; `uses:` steps (checkout, upload-artifact) are
+    # unaffected by it and are pathed explicitly where needed.
+    defaults:
+      run:
+        working-directory: android_kernel_samsung_a13ve_mt6768-master
+
     steps:
       - name: Checkout source
         uses: actions/checkout@v4
         with:
           fetch-depth: 1
+
+      - name: Verify vendor connectivity source is present
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ ! -d "../vendor/mediatek/kernel_modules/connectivity" ]; then
+            echo "ERROR: ../vendor/mediatek/kernel_modules/connectivity not found."
+            echo "This repo is expected to contain both:"
+            echo "  android_kernel_samsung_a13ve_mt6768-master/  (this checkout)"
+            echo "  vendor/                                       (sibling, committed alongside it)"
+            echo "If vendor/ isn't committed to this repo, add a checkout/download"
+            echo "step before this one that places it at that path."
+            exit 1
+          fi
+          echo "OK: vendor connectivity source found."
 
       - name: Install build dependencies
         shell: bash
@@ -135,6 +165,57 @@ jobs:
             CONFIG_SECTION_MISMATCH_WARN_ONLY=y \
             -j"$(nproc)"
 
+      - name: Build external connectivity modules (bt/gps/fmradio/connfem/udc)
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          # UNVERIFIED / never run: this step was never actually executed
+          # against a real toolchain when written -- validate it before
+          # relying on it. See build_kernel.sh for the same logic with
+          # fuller comments on where each variable value came from.
+          #
+          # Vendor source is expected as a sibling of this checkout (see
+          # the "Verify vendor connectivity source is present" step above),
+          # i.e. at "$(pwd)/../vendor/mediatek/kernel_modules".
+
+          VENDOR_CONN="$(pwd)/../vendor/mediatek/kernel_modules/connectivity"
+          VENDOR_UDC="$(pwd)/../vendor/mediatek/kernel_modules/udc"
+          # (existence of VENDOR_CONN is already guaranteed by the
+          # "Verify vendor connectivity source is present" step, which
+          # fails the job earlier if it's missing)
+
+          export ARCH=arm64
+          export CC="${CLANG_BIN}"
+          export KCFLAGS="-w"
+          if [ -n "${CROSS_PREFIX}" ]; then
+            export CROSS_COMPILE="${CROSS_PREFIX}"
+            export LLVM=1
+            export LLVM_IAS=1
+          else
+            export LLVM=1
+            export LLVM_IAS=1
+          fi
+
+          mkdir -p out_ext_modules
+
+          build_ext_module() {
+            local moddir="$1"; shift
+            if [ ! -d "$moddir" ]; then
+              echo "WARNING: $moddir not found, skipping"
+              return
+            fi
+            make -C "$(pwd)" O="$(pwd)/out" ARCH=arm64 CROSS_COMPILE="${CROSS_COMPILE:-}" \
+              M="$moddir" KERNEL_OUT="$(pwd)/out" "$@" modules
+            find "$moddir" -maxdepth 1 -name '*.ko' -exec cp -v {} out_ext_modules/ \;
+          }
+
+          build_ext_module "$VENDOR_CONN/bt/mt66xx/wmt" BT_PLATFORM=connac1x
+          build_ext_module "$VENDOR_CONN/gps"
+          build_ext_module "$VENDOR_CONN/connfem"
+          build_ext_module "$VENDOR_CONN/fmradio" MODULE_NAME=fmradio_drv_mt6631
+          build_ext_module "$VENDOR_UDC"
+
       - name: Collect artifacts
         shell: bash
         run: |
@@ -167,8 +248,15 @@ jobs:
           # Save resolved config for debugging
           cp -v out/.config artifacts/kernel.config
 
+          # External connectivity modules (bt/gps/fmradio/connfem/udc), if built
+          if [ -d out_ext_modules ] && [ -n "$(ls -A out_ext_modules 2>/dev/null)" ]; then
+            mkdir -p artifacts/ext_modules
+            cp -v out_ext_modules/*.ko artifacts/ext_modules/
+            (cd artifacts && tar -czf ext_modules.tar.gz ext_modules)
+          fi
+
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: a13ve-kernel-4.19-arm64
-          path: artifacts
+          path: android_kernel_samsung_a13ve_mt6768-master/artifacts
