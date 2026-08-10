@@ -28,7 +28,7 @@ jobs:
     # unaffected by it and are pathed explicitly where needed.
     defaults:
       run:
-        working-directory: android_kernel_samsung_a13ve_mt6768-master
+        working-directory: kernel
 
     steps:
       - name: Checkout source
